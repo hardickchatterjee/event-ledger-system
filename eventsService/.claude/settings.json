@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java -version)",
+      "Bash(mvn -version)",
+      "Bash(/Users/hardickchatterjee/Downloads/eventsService/mvnw --version)",
+      "Bash(find /Users/hardickchatterjee/.m2/repository/org/springframework/boot -name \"spring-boot-starter-parent-4.0.6.pom\" 2>/dev/null | head -3)",
+      "Read(//Users/hardickchatterjee/.m2/repository/org/springframework/boot/**)",
+      "Bash(find /Users/hardickchatterjee/.m2/repository/com/h2database -name \"*.pom\" 2>/dev/null | head -5)",
+      "Read(//Users/hardickchatterjee/.m2/repository/com/h2database/**)",
+      "Bash(find /Users/hardickchatterjee/.m2/repository/org/springframework -maxdepth 3 -name \"*.pom\" 2>/dev/null | grep \"restclient\" | head -10)",
+      "Read(//Users/hardickchatterjee/.m2/repository/org/springframework/**)",
+      "Bash(cp /Users/hardickchatterjee/Downloads/eventsService/.gitignore /Users/hardickchatterjee/Downloads/accountService/)",
+      "Bash(cp /Users/hardickchatterjee/Downloads/eventsService/.gitattributes /Users/hardickchatterjee/Downloads/accountService/)",
+      "Bash(cp /Users/hardickchatterjee/Downloads/eventsService/mvnw /Users/hardickchatterjee/Downloads/accountService/)",
+      "Bash(cp /Users/hardickchatterjee/Downloads/eventsService/mvnw.cmd /Users/hardickchatterjee/Downloads/accountService/)",
+      "Bash(cp /Users/hardickchatterjee/Downloads/eventsService/.mvn/wrapper/maven-wrapper.properties /Users/hardickchatterjee/Downloads/accountService/.mvn/wrapper/)",
+      "Bash(./mvnw clean *)",
+      "Bash(rm -rf /Users/hardickchatterjee/Downloads/eventsService/target /Users/hardickchatterjee/Downloads/accountService/target && rm -rf ~/.m2/repository)",
+      "Bash(./mvnw compile *)",
+      "Bash(./mvnw spring-boot:run -DskipTests)",
+      "Bash(curl -s http://localhost:8080/actuator/health)",
+      "Bash(curl -s http://localhost:8081/actuator/health)",
+      "Bash(pkill -f spring-boot:run)",
+      "Bash(rm -f /tmp/eventsService.log /tmp/accountService.log)",
+      "Bash(ls -la /Users/hardickchatterjee/.claude/skills/ 2>/dev/null | grep verifier || echo \"No verifier skills found\")",
+      "Read(//Users/hardickchatterjee/.claude/**)",
+      "Bash(tmux -L events new-session -d -s events -x 200 -y 50)",
+      "Bash(tmux -L events send-keys -t events 'java -jar target/eventsService-0.0.1-SNAPSHOT.jar' Enter)",
+      "Bash(java -jar target/eventsService-0.0.1-SNAPSHOT.jar)",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"java -jar.*eventsService\")",
+      "Bash(java -jar target/accountService-0.0.1-SNAPSHOT.jar)",
+      "Bash(curl -s -X POST http://localhost:8081/accounts/test-acct-2/transactions -H 'Content-Type: application/json' -d '{\"eventId\":\"tx-002\",\"type\":\"CREDIT\",\"amount\":100.00,\"currency\":\"USD\"}')",
+      "Bash(pkill -f \"java -jar\")",
+      "Bash(chmod +x /Users/hardickchatterjee/Downloads/test_all.sh)",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')"
+    ],
+    "additionalDirectories": [
+      "/Users/hardickchatterjee/Downloads/accountService",
+      "/Users/hardickchatterjee/.m2/repository",
+      "/Users/hardickchatterjee/Downloads"
+    ]
+  }
+}
