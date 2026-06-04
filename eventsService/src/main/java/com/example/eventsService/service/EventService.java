@@ -57,6 +57,7 @@ public class EventService {
             .eventTimestamp(request.getEventTimestamp())
             .metadata(request.getMetadata())
             .status(status)
+            .retryCount(0)
             .build();
 
         return eventRepository.save(record);
