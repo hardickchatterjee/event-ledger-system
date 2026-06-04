@@ -51,8 +51,17 @@ public class EventRecord {
     @Column(name = "ingested_at", nullable = false, updatable = false)
     private Instant ingestedAt;
 
+    @Column(name = "retry_count", nullable = false)
+    private Integer retryCount = 0;
+
+    @Column(name = "last_retry_time")
+    private Instant lastRetryTime;
+
     @PrePersist
     protected void onPersist() {
         this.ingestedAt = Instant.now();
+        if (this.retryCount == null) {
+            this.retryCount = 0;
+        }
     }
 }

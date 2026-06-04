@@ -7,6 +7,7 @@ import com.example.eventsService.model.EventStatus;
 import com.example.eventsService.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,7 @@ public class EventController {
     private final EventService eventService;
 
     @PostMapping
+    @RateLimiter(name = "eventSubmission", fallbackMethod = "submitEventFallback")
     public ResponseEntity<EventResponse> submitEvent(@Valid @RequestBody EventRequest request) {
         EventRecord record = eventService.submitEvent(request);
         EventResponse response = toResponse(record);
@@ -53,6 +55,11 @@ public class EventController {
             .map(this::toResponse)
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
+    }
+
+    public ResponseEntity<String> submitEventFallback(@Valid @RequestBody EventRequest request, Exception ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+            .body("Rate limit exceeded. Maximum 100 requests per minute allowed. Please retry later.");
     }
 
     private EventResponse toResponse(EventRecord record) {
