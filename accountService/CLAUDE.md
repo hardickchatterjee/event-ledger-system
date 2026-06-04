@@ -87,7 +87,9 @@ All endpoints are **internal only** — not exposed to external clients. The Eve
 | POST | `/accounts/{accountId}/transactions` | Apply a transaction (deduped by eventId) |
 | GET | `/accounts/{accountId}/balance` | Get current balance and transaction count |
 | GET | `/accounts/{accountId}` | Get account details + recent 20 transactions |
-| GET | `/actuator/health` | Health check |
+| GET | `/health-check` | Custom service health (database connectivity) |
+| GET | `/actuator/health` | Spring Actuator health with details |
+| GET | `/actuator/prometheus` | Prometheus metrics endpoint |
 
 ## Core Entities
 
@@ -183,6 +185,7 @@ CREATE TABLE transactions (
 ## Dependencies (pom.xml Highlights)
 
 ```xml
+<!-- Web & Data -->
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -195,6 +198,22 @@ CREATE TABLE transactions (
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-validation</artifactId>
 </dependency>
+
+<!-- Observability -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-opentelemetry</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+</dependency>
+
+<!-- Database & Serialization -->
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
@@ -210,7 +229,10 @@ CREATE TABLE transactions (
 </dependency>
 ```
 
-**Note:** No `spring-boot-starter-restclient` — Account Service makes no outbound calls.
+**Notes:**
+- No `spring-boot-starter-restclient` — Account Service makes no outbound calls
+- `spring-boot-starter-opentelemetry` provides OTel SDK and auto-config
+- Metrics are exported to Prometheus and traces to OTel Collector
 
 ## Jakarta EE Namespaces
 
@@ -238,11 +260,21 @@ spring.jpa.show-sql=true
 spring.h2.console.enabled=true
 spring.h2.console.path=/h2-console
 
-management.endpoints.web.exposure.include=health,info
+# Observability
+logging.structured.format.console=ecs
+management.endpoints.web.exposure.include=health,info,prometheus
+management.endpoint.health.show-details=always
+management.otlp.tracing.endpoint=http://localhost:4318/v1/traces
+management.tracing.sampling.probability=1.0
 ```
 
+**Key configurations:**
 - H2 console accessible at `/h2-console` for debugging
 - Separate database instance (`accountsdb`) from Event Gateway
+- Structured JSON logging (ECS) with trace context
+- OTel tracing endpoint (overridable via `MANAGEMENT_OTLP_TRACING_ENDPOINT` env var)
+- Prometheus metrics endpoint: `/actuator/prometheus`
+- Custom metrics: `transactions.applied_total{status=...}` counter
 
 ## Example Workflows
 
@@ -304,6 +336,24 @@ GET /accounts/new-acct/balance
    }
    ```
 
+## Observability Features
+
+### Structured JSON Logging
+- All logs output in ECS format with `@timestamp`, `service.name`, `log.level`, `trace.id`, `span.id`
+- Enabled via `logging.structured.format.console=ecs`
+- Traces propagated from eventsService via W3C `traceparent` headers
+
+### Distributed Tracing
+- Receives traces from eventsService (parent spans via headers)
+- Auto-instruments database queries, service methods
+- Exports to OTel Collector (OTLP HTTP) → Zipkin
+- Full request path visible: Gateway → Account Service, with timing and errors
+
+### Metrics
+- Prometheus endpoint: `GET /actuator/prometheus`
+- Custom counter: `transactions.applied_total{status=...}` — ACCEPTED, DUPLICATE
+- Auto-instrumented: JVM, HTTP, database
+
 ## Deployment Notes
 
 ### Scalability
@@ -314,7 +364,7 @@ This is a reference implementation using H2 in-memory databases. For production:
 - **Shared database:** eventsService and accountService could share a single database with separate schemas
 - **Caching:** Add Redis for balance caching (compute balance on write, cache on read)
 - **Async:** Use message queues (Kafka) for async event processing instead of synchronous REST
-- **Monitoring:** Add Spring Boot Actuator endpoints (metrics, traces) for observability
+- **Monitoring:** Observability stack (OTel Collector, Zipkin, Prometheus) is already integrated
 
 ### Deduplication Guarantees
 
@@ -326,6 +376,23 @@ The current implementation is safe for single-instance deployments. For multi-in
   - Event sourcing with version vectors
   - Outbox pattern (store + send in single transaction)
 
+## Docker Deployment
+
+Both services run in Docker with full observability:
+
+```bash
+cd /Users/hardickchatterjee/Downloads/event-ledger-system
+docker-compose up -d
+```
+
+This starts:
+- **eventsService** (port 8080) with circuit breaker & tracing
+- **accountService** (port 8081) with distributed tracing
+- **Zipkin** (port 9411) — trace visualization
+- **OTel Collector** (ports 4317/4318) — trace aggregation
+- **Prometheus** (port 9090) — metrics visualization
+
 ---
 
 **Last Updated:** 2026-06-04
+**Observability Added:** 2026-06-04 — OpenTelemetry, Prometheus, structured logging, metrics
